@@ -36,4 +36,28 @@ router.post("/register", async (req, res) => {
   res.json({ token });
 });
 
+router.post("/login", async (req, res) => {
+  // destructuring the payload
+  const { email, password } = req.body;
+
+  // check if the user exits on db or not (if not then throw error)
+  const user = await db.query("select * from users where user_email = $1", [
+    email,
+  ]);
+
+  if (user.rows.length === 0) {
+    res.status(401).send({ message: "User doesn't exist" });
+  }
+
+  const validPassword = bcrypt.compare(password, user.rows[0].user_password);
+
+  if (!validPassword) {
+    res.status(401).send({ message: "Email or password doesn't match" });
+  }
+
+  const token = jwtGenerator(user.rows[0].user_id);
+
+  res.send({ token });
+});
+
 module.exports = router;
